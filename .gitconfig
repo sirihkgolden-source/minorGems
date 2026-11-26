@@ -1,0 +1,11 @@
+[user]
+	name = Jason Rohrer
+	email = jasonrohrer@fastmail.fm
+[push]
+	default = simple
+
+[alias]
+	mdiff = difftool --dir-diff --tool=meld --no-prompt
+	xdiff = difftool --dir-diff --tool=xxdiff --no-prompt
+[credential]
+	helper = cache --timeout=3600

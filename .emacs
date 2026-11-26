@@ -1,0 +1,439 @@
+
+										; Modification History
+;;
+;; 2001-March-10   Jason Rohrer
+;; Created.
+;; Fixed so that c++ mode is used for .h files.
+;; Fixed [C-backspace] mapping.
+;;
+;; 2001-May-21   Jason Rohrer
+;; Changed so that Java inclass items are not doubly indented.
+;;
+;; 2002-January-21   Jason Rohrer
+;; Gave in and set to use spaces instead of tabs.
+;; This is primarily motivated by the fact that tabs look terrible
+;; in CVS-web.
+;;
+;; 2005-January-16   Jason Rohrer
+;; Added php mode.
+;;
+;; 2010-January-7   Jason Rohrer
+;; Added count-words function (nice!)
+;;
+
+(setq frame-title-format "emacs: %b")
+
+(setq default-frame-alist '((width . 81) (height . 31)))
+
+
+;; Stop forcing newlines at the end of every file, please
+;; Actually, since a bunch of Unix tools freak out of there's not
+;; a final newline, I'm going back to adding these to every file now.
+;; (Jason, February 5, 2026)
+(setq mode-require-final-newline t)
+
+
+(custom-set-variables
+  ;; custom-set-variables was added by Custom -- don't edit or cut/paste it!
+  ;; Your init file should contain only one such instance.
+ '(case-fold-search t)
+ '(current-language-environment "ASCII")
+ '(global-font-lock-mode t nil (font-lock))
+ '(tab-stop-list (quote (4 8 12 16 20 24 28 32 36 40 44 48 52 56 60)))
+ '(transient-mark-mode t))
+
+
+
+
+(custom-set-faces
+ ;; Comments: green, normal, no underline
+ '(font-lock-comment-face
+   ((t (:foreground "#00AA00"
+					:weight normal
+					:slant normal
+					:underline nil))))
+
+ '(font-lock-string-face
+   ((t (:foreground "#FF00FF"
+					:weight normal
+					:slant normal
+					:underline nil))))
+
+ '(font-lock-type-face
+   ((t (:foreground "#008080"
+					:weight normal
+					:slant normal
+					:underline nil))))
+
+ '(font-lock-keyword-face
+   ((t (:foreground "#C88000"
+					:weight normal
+					:slant normal
+					:underline nil))))
+
+ '(font-lock-function-name-face
+   ((t (:foreground "#C80000"
+					:weight normal
+					:slant normal
+					:underline nil))))
+
+ '(font-lock-variable-name-face
+   ((t (:foreground "#0000FF"
+					:weight normal
+					:slant normal
+					:underline nil))))
+
+ '(font-lock-constant-face
+   ((t (:foreground "#C800FF"
+					:weight bold
+					:slant normal
+					:underline nil))))
+
+ '(font-lock-warning-face
+   ((t (:foreground "#FF0000"
+					:weight bold
+					:slant normal
+					:underline nil))))
+
+ '(font-lock-reference-face
+   ((t (:foreground "#00FFFF"
+					:weight normal
+					:slant normal
+					:underline nil))))
+ )
+
+
+;(setq-default scroll-step 1)               ; turn off jumpy scroll
+(setq-default visible-bell t)              ; no beeps, flash on errors
+
+(display-time)                             ; display the time on modeline
+(column-number-mode t)                     ; display the column number on modeline
+(setq-default kill-whole-line t)           ; ctrl-k kills whole line if at col 0
+(setq-default fill-column 80)              ; wrap at col 80
+(setq-default tab-width 4)                 ; show tabs as 4 cols
+
+(setq font-lock-maximum-decoration t)      ; use colours in font lock mode
+(setq font-lock-maximum-size nil)          ; turn off limit on font lock mode
+
+; turn on font-lock everywhere (if possible)
+(global-font-lock-mode 1)
+
+; make sure C-backspace kills a word
+( global-set-key `[C-backspace]   `backward-kill-word )
+
+; background color, light yellow
+( add-to-list  'default-frame-alist '( background-color . "#FFFFDC" ) )
+
+; auto fill mode
+( add-hook 'c-mode-common-hook 'turn-on-auto-fill )
+
+
+;; Enable current line highlighting globally
+(global-hl-line-mode 1)
+(set-face-background 'hl-line "#EEEEFF")
+
+
+(add-to-list 'load-path "~/.emacs.d/lisp")
+(require 'col-highlight)
+
+(set-face-background 'col-highlight "#EEEEFF")
+
+
+;; make marks visible
+(setq visible-mark-max 20)
+
+(setq visible-mark-faces `(visible-mark-face1))
+
+(require 'visible-mark)
+(global-visible-mark-mode 0)
+
+(set-face-background 'visible-mark-face1 "#FFE2A8")
+(set-face-underline 'visible-mark-face1 t)
+
+;; command from stackoverflow that walks forward in mark ring
+(defun unpop-to-mark-command ()
+  "Unpop off mark ring. Does nothing if mark ring is empty."
+  (interactive)
+  (when mark-ring
+    (let ((pos (marker-position (car (last mark-ring)))))
+      (if (not (= (point) pos))
+          (goto-char pos)
+        (setq mark-ring (cons (copy-marker (mark-marker)) mark-ring))
+        (set-marker (mark-marker) pos)
+        (setq mark-ring (nbutlast mark-ring))
+        (goto-char (marker-position (car (last mark-ring))))))))
+
+
+; these don't work in emacs 23
+; fix comment syntax highlighting problems
+;( setq font-lock-support-mode 'lazy-lock-mode )
+;( setq lazy-lock-defer-time 0 )
+
+; delete highlighted text as we type
+( delete-selection-mode t )
+
+; make sure c++ mode is used for .h files
+( setq auto-mode-alist ( 
+	append '(
+		("\\.h$" . c++-mode)
+		)
+	auto-mode-alist
+	)
+)
+
+
+; off for now, since it screws up indenting
+; load the line numbers package
+;( load "setnu" );
+; turn it on
+;( add-hook 'c-mode-common-hook 'turn-on-setnu-mode )
+
+
+
+
+
+
+(defconst my-c-style
+  '((c-tab-always-indent           . t)
+    (c-comment-only-line-offset    . 4)
+    (c-hanging-braces-alist        . ((substatement-open after)
+									  (defun-open after)
+									  (block-open after)
+									  (class-open after)
+									  (inline-open after)
+									  (brace-entry-open after)
+                                      (brace-list-open)))
+    (c-hanging-colons-alist        . ((member-init-intro before)
+                                      (inher-intro)
+                                      (case-label after)
+                                      (label after)
+                                      (access-label after)))
+    (c-cleanup-list                . (scope-operator
+                                      empty-defun-braces
+                                      defun-close-semi))
+    (c-offsets-alist               . ((arglist-close     . c-lineup-arglist)
+                                      (substatement-open . 0)
+                                      (case-label        . 4)
+                                      (block-open        . 0)
+									  (comment-intro     . 0)
+                                      (block-close       . 4)
+                                      (inclass           . 8)
+                                      (access-label      . -4)
+									  (defun-close       . 4)
+									  (inline-close      . 4)
+									  (class-close       . 4)
+									  (brace-list-close  . 4)
+                                      (knr-argdecl-intro . -)))
+    (c-echo-syntactic-information-p . t)
+    )
+  "My C Programming Style")
+
+;; Customizations for all of c-mode, c++-mode, and objc-mode
+(defun my-c-mode-common-hook ()
+  ;; add my personal style and set it for the current buffer
+  (c-add-style "PERSONAL" my-c-style t)
+
+  ;; offset customizations not in my-c-style
+  (c-set-offset 'member-init-intro '++)
+  ;; other customizations
+  (setq tab-width 4
+        ;; this will make sure spaces are used instead of tabs
+        indent-tabs-mode nil)
+  ;; we like auto-newline and hungry-delete
+  (c-toggle-auto-hungry-state 1)
+  ;; keybindings for C, C++, and Objective-C.  We can put these in
+  ;; c-mode-map because c++-mode-map and objc-mode-map inherit it
+  (define-key c-mode-map "\C-m" 'newline-and-indent)
+  )
+
+;; the following only works in Emacs 19
+;; Emacs 18ers can use (setq c-mode-common-hook 'my-c-mode-common-hook)
+(add-hook 'c-mode-common-hook 'my-c-mode-common-hook)
+(add-hook 'java-mode-hook 'my-c-mode-common-hook)
+
+
+
+
+( add-hook 'perl-mode-hook 'my-perl-mode-hook )
+
+
+
+
+(require 'php-mode)
+
+
+; caml mode (Tuareg)
+(setq auto-mode-alist (cons '("\\.ml\\w?" . tuareg-mode) auto-mode-alist))
+  (autoload 'tuareg-mode "tuareg" "Major mode for editing Caml code" t)
+  (autoload 'camldebug "camldebug" "Run the Caml debugger" t)
+
+; old caml mode
+;(setq auto-mode-alist
+;	  (cons '("\\.ml[iylp]?$" . caml-mode) auto-mode-alist))
+;(autoload 'caml-mode "caml" "Major mode for editing Caml code." t)
+;(autoload 'run-caml "inf-caml" "Run an inferior Caml process." t)
+;(if window-system (require 'caml-font))
+(put 'downcase-region 'disabled nil)
+
+
+
+;; actionscript (for flash development)
+(autoload 'actionscript-mode "actionscript-mode" "Major mode for actionscript." t)
+;; Activate actionscript-mode for any files ending in .as
+(add-to-list 'auto-mode-alist '("\\.as$" . actionscript-mode))
+;; Load our actionscript-mode extensions.
+;;(eval-after-load "actionscript-mode" '(load "as-config"))
+
+
+
+;; October 22, 2010
+
+;;; Final version: while
+(defun count-words-region (beginning end)
+  "Print number of words in the region."
+  (interactive "r")
+  (message "Counting words in region ... ")
+
+;;; 1. Set up appropriate conditions.
+  (save-excursion
+    (let ((count 0))
+      (goto-char beginning)
+
+;;; 2. Run the while loop.
+      (while (and (< (point) end)
+                  (re-search-forward "\\w+\\W*" end t))
+        (setq count (1+ count)))
+
+;;; 3. Send a message to the user.
+      (cond ((zerop count)
+             (message
+              "The region does NOT have any words."))
+            ((= 1 count)
+             (message
+              "The region has 1 word."))
+            (t
+             (message
+              "The region has %d words." count))))))
+
+;; Count the words in the entire document
+(defun count-words-buffer ()
+  "Count all the words in the buffer"
+  (interactive)
+  (count-words-region (point-min) (point-max) )
+)
+ 
+
+
+;; so that gcc smart quotes are displayed properly
+(prefer-coding-system 'utf-8)
+
+
+
+;; don't show help screen at startup
+(setq inhibit-startup-message t)
+(setq inhibit-splash-screen t)
+
+
+;; don't open a buffer for output of async shell commands
+(setq async-shell-command-display-buffer nil)
+
+(defvar ddd-debug-line-command nil
+  "The last executable used for debugging in 'ddd-debug-line'.")
+
+
+(defun ddd-debug-line (executable)
+  "Start ddd with gdb, set a breakpoint at the current line, and run."
+  (interactive
+   (list (read-shell-command "Command to debug: " (or ddd-debug-line-command "./Chessamphetamine" ) )))  ;; Auto-complete based on current directory
+    
+  (let ((file (buffer-file-name))             ; Get current file
+        (line (line-number-at-pos)))          ; Get current line number
+    (if (and file line)
+		(with-temp-buffer
+        (async-shell-command
+         ;(format "ddd --debugger 'gdb -ex \"break %s:%d\" -ex \"run\"' %s"
+	     ;        (file-name-nondirectory file) line executable )
+		 (format " /home/jasonrohrer/checkout/claudDBG/cdbg %s %s:%d"
+                 executable (file-name-nondirectory file) line )
+		 ) )
+      (message "Not in a file or unable to get line number!"))
+;; Store the last used executable
+    (setq ddd-debug-line-command executable)))
+
+
+
+
+
+
+(require 'cl-lib)
+(require 'subr-x)  ;; for string-trim-left
+
+(defun jcr-prev-line-column-starts ()
+  "Return a list of column numbers where tokens start on the
+nearest usable previous line.
+
+Skips lines that are:
+  - completely blank,
+  - only spaces/tabs, or
+  - whose first non-space character is '/' (comment lines).
+
+A token start is a non-space character that is either at BOL or
+immediately preceded by a space or tab."
+  (save-excursion
+    (let ((found nil))
+      ;; Walk upward until we find a ?real? line or hit bobp.
+      (while (and (not found)
+                  (not (bobp)))
+        (forward-line -1)
+        (let* ((line (buffer-substring-no-properties
+                      (line-beginning-position)
+                      (line-end-position)))
+               (trimmed (string-trim-left line)))
+          (cond
+           ;; Blank / whitespace-only line: keep going
+           ((string-match-p "\\`[ \t]*\\'" line)
+            nil)
+           ;; First non-space is '/', treat as comment: keep going
+           ((and (> (length trimmed) 0)
+                 (eq (aref trimmed 0) ?/))
+            nil)
+           ;; Otherwise, this is our reference line
+           (t
+            (setq found t)))))
+      (when found
+        (let ((cols nil)
+              (eol (line-end-position))
+              (prev-space t))
+          (beginning-of-line)
+          (while (< (point) eol)
+            (let ((ch (char-after)))
+              (if (or (eq ch ?\s) (eq ch ?\t) (eq ch ?*))
+                  (setq prev-space t)
+                (when prev-space
+                  (push (current-column) cols))
+                (setq prev-space nil)))
+            (forward-char 1))
+          (nreverse cols)))))
+  )
+
+
+
+(defun jcr-next-column ()
+  "Insert spaces to move point to the next \"column\" defined by previous line.
+
+Columns are defined by the token start positions on the previous line.
+Repeated calls keep moving to later columns. Only spaces are inserted;
+text before point is not disturbed."
+  (interactive)
+  (let* ((cols (jcr-prev-line-column-starts))
+         (cur  (if (eq (following-char) ?*)
+				   (+ (current-column) 1)
+				 (current-column) ) )
+         (target (cl-loop for c in cols
+                          when (> c cur) return c)))
+    (when target
+      (let ((n (- target cur)))
+        (when (> n 0)
+          (insert (make-string n ?\s))))))
+  ;; If there is no later column, do nothing.
+  )
